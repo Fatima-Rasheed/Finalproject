@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-// import { auth, db } from '../../firebaseConfig'
-import { auth,db } from '@/firebase/config'
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import { auth, db } from '@/firebase/config'
 import { doc, getDoc } from 'firebase/firestore'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,6 +16,22 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  // Auto-redirect if already logged in as admin
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docRef = doc(db, 'admins', user.uid)
+        const docSnap = await getDoc(docRef)
+
+        if (docSnap.exists() && docSnap.data().role === 'admin') {
+          router.push('/admin-dashboard')
+        }
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -48,10 +63,12 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-white">
-      {/* Left side - image and text */}
+      {/* Left Side - Welcome and Illustration */}
       <div className="hidden md:flex items-center justify-center bg-black text-white">
         <div className="text-center max-w-md px-8">
-          <h1 className="text-4xl font-bold mb-4">Welcome to <br /> FYP Portal</h1>
+          <h1 className="text-4xl font-bold mb-4">
+            Welcome to <br /> FYP Portal
+          </h1>
           <p className="text-gray-300 text-sm mb-6">
             Admin login for managing final year projects.
           </p>
@@ -59,7 +76,7 @@ export default function AdminLoginPage() {
         </div>
       </div>
 
-      {/* Right side - login form */}
+      {/* Right Side - Login Form */}
       <div className="flex items-center justify-center px-6 py-10">
         <div className="w-full max-w-md space-y-6">
           <h2 className="text-3xl font-bold text-center">Admin Login</h2>
@@ -86,15 +103,10 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <Button
-            className="w-full"
-            onClick={handleLogin}
-            disabled={loading}
-          >
+          <Button className="w-full" onClick={handleLogin} disabled={loading}>
             {loading ? 'Logging in...' : 'Login as Admin'}
           </Button>
 
-          {/* Sign up redirect */}
           <div className="text-center text-sm text-gray-600">
             Don&apos;t have an account?{' '}
             <button

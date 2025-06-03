@@ -1,7 +1,8 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Navbar } from '@/app/components/Navbar';
 import { FaUserCog, FaUser, FaPhone, FaGraduationCap } from "react-icons/fa";
@@ -23,7 +24,7 @@ interface Profile {
 export default function SupervisorProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading] = useState(true); // ✅ loading state added
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -32,10 +33,22 @@ export default function SupervisorProfilePage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setProfile(docSnap.data() as Profile);
+        } else {
+          setProfile({
+            fullName: '',
+            designation: '',
+            phone: '',
+            email: user.email || '',
+            department: '',
+            areaOfExpertise: '',
+            officeHours: '',
+            educationalBackground: '',
+          });
         }
       }
-      setLoading(false); // ✅ done loading
+      setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -48,9 +61,14 @@ export default function SupervisorProfilePage() {
     const user = auth.currentUser;
     if (user && profile) {
       const docRef = doc(db, 'supervisors', user.uid);
-      await updateDoc(docRef, { ...profile });
+      await setDoc(docRef, {
+        ...profile,
+        uid: user.uid,
+        email: user.email,
+        timestamp: Date.now()
+      });
       setEditMode(false);
-      alert('Profile updated successfully');
+      alert('Profile saved successfully!');
     }
   };
 
@@ -75,6 +93,7 @@ export default function SupervisorProfilePage() {
       <header className="fixed top-0 left-0 md:left-64 w-full md:w-[calc(100%-16rem)] z-20">
         <Navbar />
       </header>
+
       <main className="pt-20 p-10 pb-0">
         <header className="bg-[rgb(21,21,21)] text-white p-5 rounded-md mb-5">
           <div className="container mx-auto flex justify-between items-center">
@@ -92,11 +111,11 @@ export default function SupervisorProfilePage() {
               { label: "Designation", icon: <IoDocumentTextSharp />, field: "designation" },
               { label: "Department", icon: <GiFireplace />, field: "department" },
               { label: "Phone No", icon: <FaPhone />, field: "phone" },
-              { label: "Email", icon: <MdEmail />, field: "email", type: "email" },
+              { label: "Email", icon: <MdEmail />, field: "email", type: "email", readOnly: true },
               { label: "Office Hours", icon: <MdEmail />, field: "officeHours" },
               { label: "Area Of Expertise", icon: <FaGraduationCap />, field: "areaOfExpertise" },
               { label: "Educational Background", icon: <FaGraduationCap />, field: "educationalBackground" },
-            ].map(({ label, icon, field, type }) => (
+            ].map(({ label, icon, field, type, readOnly }) => (
               <div key={field}>
                 <label className="font-medium flex items-center">
                   {icon}
@@ -106,8 +125,8 @@ export default function SupervisorProfilePage() {
                   type={type || "text"}
                   value={profile[field as keyof Profile] || ""}
                   onChange={(e) => handleChange(field as keyof Profile, e.target.value)}
-                  readOnly={!editMode}
-                  className={`w-full p-2 border rounded ${!editMode ? 'bg-gray-100' : ''}`}
+                  readOnly={editMode ? readOnly : true}
+                  className={`w-full p-2 border rounded ${!editMode || readOnly ? 'bg-gray-100' : ''}`}
                 />
               </div>
             ))}

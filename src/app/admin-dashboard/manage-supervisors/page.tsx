@@ -98,7 +98,7 @@ export default function ManageSupervisorsPage() {
                 <th className="text-left px-4 py-2">Name</th>
                 <th className="text-left px-4 py-2">Email</th>
                 <th className="text-left px-4 py-2">Designation</th>
-                <th className="text-left px-4 py-2">Interested Areas</th>
+                <th className="text-left px-4 py-2"> Area of Expertise</th>
                 <th className="text-left px-4 py-2">Students</th>
                 <th className="text-left px-4 py-2">Actions</th>
               </tr>
@@ -109,7 +109,7 @@ export default function ManageSupervisorsPage() {
                   <td className="px-4 py-2 font-bold">{supervisor.fullName || '-'}</td>
                   <td className="px-4 py-2 font-semibold">{supervisor.email || '-'}</td>
                   <td className="px-4 py-2 font-semibold">{supervisor.designation || '-'}</td>
-                  <td className="px-4 py-2 font-semibold">AI</td>
+                  <td className="px-4 py-2 font-semibold">{supervisor.areaOfExpertise || '-'}</td>
                   <td className="px-4 py-2 font-semibold">{supervisor.studentCount || 0}</td>
                   <td className="px-4 py-2 font-semibold">
                     <button

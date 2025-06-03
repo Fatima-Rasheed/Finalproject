@@ -52,7 +52,7 @@ export default function Home() {
         <button onClick={() => router.push('/supervisor-login')} className="bg-[rgb(21,21,21)] text-white px-6 py-2 rounded mb-4 w-96">
           Supervisor
         </button>
-        <button onClick={() => router.push('/admin-dashboard')} className="bg-[rgb(21,21,21)] text-white px-6 py-2 rounded w-96">
+        <button onClick={() => router.push('/admin-login')} className="bg-[rgb(21,21,21)] text-white px-6 py-2 rounded w-96">
           Admin
         </button>
 

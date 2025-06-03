@@ -1,36 +1,27 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Navbar } from '@/app/components/Navbar';
-import { FaUserCog } from "react-icons/fa";
-import { GoGraph } from "react-icons/go";
-import { FaUser } from "react-icons/fa";
-import { TiGroup } from "react-icons/ti";
-import { MdEmail } from "react-icons/md";
-import { FaPhone } from "react-icons/fa";
-import { IoDocumentTextSharp } from "react-icons/io5";
-import { FaGraduationCap } from "react-icons/fa";
-import { GiFireplace } from "react-icons/gi";
-import { useRouter } from "next/navigation";
+import { FaUser, FaPhone, FaGraduationCap } from 'react-icons/fa';
+import { MdEmail } from 'react-icons/md';
+import { GiFireplace } from 'react-icons/gi';
 
-interface Profile {
+interface StudentProfile {
   fullName: string;
-  regNo: string;
-  batch: string;
+  regNumber: string;
+  semester: string;
   phone: string;
   email: string;
-  department: string;
-  program: string;
   batchStream: string;
 }
 
 export default function StudentProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading] = useState(true); // ✅ new state
-  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -38,15 +29,25 @@ export default function StudentProfilePage() {
         const docRef = doc(db, 'students', user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setProfile(docSnap.data() as Profile);
+          setProfile(docSnap.data() as StudentProfile);
+        } else {
+          setProfile({
+            fullName: '',
+            regNumber: '',
+            semester: '',
+            phone: '',
+            email: user.email || '',
+            batchStream: '',
+          });
         }
       }
-      setLoading(false); // ✅ stop loading once auth check completes
+      setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
-  const handleChange = (field: keyof Profile, value: string) => {
+  const handleChange = (field: keyof StudentProfile, value: string) => {
     if (!profile) return;
     setProfile({ ...profile, [field]: value });
   };
@@ -55,9 +56,14 @@ export default function StudentProfilePage() {
     const user = auth.currentUser;
     if (user && profile) {
       const docRef = doc(db, 'students', user.uid);
-      await updateDoc(docRef, { ...profile });
+      await setDoc(docRef, {
+        ...profile,
+        uid: user.uid,
+        email: user.email,
+        timestamp: Date.now(),
+      });
       setEditMode(false);
-      alert('Profile updated successfully');
+      alert('Profile saved successfully!');
     }
   };
 
@@ -71,9 +77,7 @@ export default function StudentProfilePage() {
 
   if (!profile) {
     return (
-      <div className="p-6 text-center text-gray-600">
-        Profile not found.
-      </div>
+      <div className="p-6 text-center text-gray-600">Profile data not found.</div>
     );
   }
 
@@ -82,77 +86,57 @@ export default function StudentProfilePage() {
       <header className="fixed top-0 left-0 md:left-64 w-full md:w-[calc(100%-16rem)] z-20">
         <Navbar />
       </header>
+
       <main className="pt-20 p-10 pb-0">
         <header className="bg-[rgb(21,21,21)] text-white p-5 rounded-md mb-5">
           <div className="container mx-auto flex justify-between items-center">
-            <h1 className="text-2xl font-semibold"> My Profile</h1>
-            <div className="bg-gray-300 p-2 rounded-full">
-              <FaUserCog className="h-6 w-6 text-[rgb(21,21,21)]" />
-            </div>
+            <h1 className="text-2xl font-semibold">My Profile</h1>
           </div>
         </header>
 
-        <div className="bg-white p-8 rounded shadow max-w-5xl  h-[450px]    mx-auto">
+        <div className="bg-white p-8 rounded shadow max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="flex items-center font-medium">
-                <FaUser className="mr-2" /> Full Name:
-              </label>
-              <input type="text" value={profile.fullName} onChange={(e) => handleChange('fullName', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <IoDocumentTextSharp className="mr-2" />Reg No:
-              </label>
-              <input type="text" value={profile.regNo} onChange={(e) => handleChange('regNo', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <TiGroup className="mr-2" />Session:
-              </label>
-              <input type="text" value={profile.batch} onChange={(e) => handleChange('batch', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <FaPhone className="mr-2" />Phone No:
-              </label>
-              <input type="text" value={profile.phone} onChange={(e) => handleChange('phone', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <MdEmail className="mr-2" />Email:
-              </label>
-              <input type="email" value={profile.email} readOnly className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <GiFireplace className="mr-2" />Department:
-              </label>
-              <input type="text" value={profile.department} onChange={(e) => handleChange('department', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <FaGraduationCap className="mr-2" />Program:
-              </label>
-              <input type="text" value={profile.program} onChange={(e) => handleChange('program', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
-            <div>
-              <label className="font-medium flex items-center">
-                <GoGraph className="mr-2" />Batch Stream:
-              </label>
-              <input type="text" value={profile.batchStream} onChange={(e) => handleChange('batchStream', e.target.value)} disabled={!editMode} className="w-full p-2 border rounded bg-gray-100" />
-            </div>
+            {[
+              { label: 'Full Name', icon: <FaUser />, field: 'fullName' },
+              { label: 'Registration Number', icon: <FaUser />, field: 'regNumber' },
+              { label: 'Semester', icon: <FaGraduationCap />, field: 'semester' },
+              { label: 'Phone No', icon: <FaPhone />, field: 'phone' },
+              { label: 'Email', icon: <MdEmail />, field: 'email', type: 'email', readOnly: true },
+              { label: 'Batch/Stream', icon: <GiFireplace />, field: 'batchStream' },
+            ].map(({ label, icon, field, type, readOnly }) => (
+              <div key={field}>
+                <label className="font-medium flex items-center">
+                  {icon}
+                  <span className="ml-2">{label}:</span>
+                </label>
+                <input
+                  type={type || 'text'}
+                  value={profile[field as keyof StudentProfile] || ''}
+                  onChange={(e) => handleChange(field as keyof StudentProfile, e.target.value)}
+                  readOnly={editMode ? readOnly : true}
+                  className={`w-full p-2 border rounded ${!editMode || readOnly ? 'bg-gray-100' : ''}`}
+                />
+              </div>
+            ))}
           </div>
 
-          {!editMode ? (
-            <button className="bg-[rgb(21,21,21)] mr-8 absolute right-32 text-white py-2 mt-9 px-6 rounded w-[200px]" onClick={() => setEditMode(true)}>
-              Edit Profile
-            </button>
-          ) : (
-            <button className="bg-[rgb(21,21,21)] mr-8 text-white py-2  absolute right-32    mt-9 px-6 rounded w-[200px]" onClick={handleSave}>
-              Save Profile
-            </button>
-          )}
+          <div className="flex justify-end gap-4 mt-8">
+            {!editMode ? (
+              <button
+                onClick={() => setEditMode(true)}
+                className="bg-[rgb(21,21,21)] text-white py-2 px-6 rounded"
+              >
+                Edit Profile
+              </button>
+            ) : (
+              <button
+                onClick={handleSave}
+                className="bg-[rgb(21,21,21)] text-white py-2 px-6 rounded"
+              >
+                Save Profile
+              </button>
+            )}
+          </div>
         </div>
       </main>
     </div>

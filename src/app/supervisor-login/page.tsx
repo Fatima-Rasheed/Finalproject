@@ -66,6 +66,7 @@ export default function StudentLoginPage() {
           >
             Login
           </button>
+            
            {/* Horizontal Line with "or" */}
           <div className="flex items-center w-full mt-4">
             <div className="border-t border-gray-300 flex-grow"></div>
